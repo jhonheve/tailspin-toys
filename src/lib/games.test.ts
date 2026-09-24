@@ -63,4 +63,25 @@ describe('games data-access helpers', () => {
         await seedGames(db, 2);
         expect(await getGameById(db, 99999)).toBeNull();
     });
+
+    it('filters by category and publisher', async () => {
+        // create two categories and two publishers
+        const [catA] = await db.insert(categories).values({ name: 'Cat A', description: 'a' }).returning({ id: categories.id });
+        const [catB] = await db.insert(categories).values({ name: 'Cat B', description: 'b' }).returning({ id: categories.id });
+        const [pubX] = await db.insert(publishers).values({ name: 'Pub X', description: 'x' }).returning({ id: publishers.id });
+        const [pubY] = await db.insert(publishers).values({ name: 'Pub Y', description: 'y' }).returning({ id: publishers.id });
+
+        await db.insert(games).values({ title: 'G1', description: 'g1', starRating: 5, categoryId: catA.id, publisherId: pubX.id });
+        await db.insert(games).values({ title: 'G2', description: 'g2', starRating: 5, categoryId: catB.id, publisherId: pubX.id });
+        await db.insert(games).values({ title: 'G3', description: 'g3', starRating: 5, categoryId: catA.id, publisherId: pubY.id });
+
+        const byCatA = await getAllGames(db, { categoryIds: [catA.id] });
+        expect(byCatA.map((g) => g.title).sort()).toEqual(expect.arrayContaining(['G1', 'G3']));
+
+        const byPubX = await getAllGames(db, { publisherId: pubX.id });
+        expect(byPubX.map((g) => g.title).sort()).toEqual(expect.arrayContaining(['G1', 'G2']));
+
+        const combined = await getAllGames(db, { categoryIds: [catA.id], publisherId: pubX.id });
+        expect(combined.map((g) => g.title)).toEqual(['G1']);
+    });
 });
