@@ -77,13 +77,13 @@ export async function getAllGames(db: Database, filters?: GamesFilter): Promise<
 /** All categories (id + name) ordered by name. */
 export async function getAllCategories(db: Database): Promise<{ id: number; name: string }[]> {
     const rows = await db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.name));
-    return rows.map((r: any) => ({ id: r.id as number, name: r.name as string }));
+    return rows.map((r: { id: number; name: string }) => ({ id: r.id, name: r.name }));
 }
 
 /** All publishers (id + name) ordered by name. */
 export async function getAllPublishers(db: Database): Promise<{ id: number; name: string }[]> {
     const rows = await db.select({ id: publishers.id, name: publishers.name }).from(publishers).orderBy(asc(publishers.name));
-    return rows.map((r: any) => ({ id: r.id as number, name: r.name as string }));
+    return rows.map((r: { id: number; name: string }) => ({ id: r.id, name: r.name }));
 }
 
 /** All game ids ordered by title. */
