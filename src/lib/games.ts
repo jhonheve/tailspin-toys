@@ -50,10 +50,40 @@ function baseGamesQuery(db: Database) {
         .leftJoin(publishers, eq(games.publisherId, publishers.id));
 }
 
-/** All games ordered by title. */
-export async function getAllGames(db: Database): Promise<Game[]> {
+export type GamesFilter = {
+    categoryIds?: number[];
+    publisherId?: number | null;
+};
+
+/** All games ordered by title. Supports optional in-memory filtering by category ids and publisher id. */
+export async function getAllGames(db: Database, filters?: GamesFilter): Promise<Game[]> {
     const rows = await baseGamesQuery(db).orderBy(asc(games.title));
-    return rows.map(mapGame);
+    const mapped = rows.map(mapGame);
+
+    if (!filters) return mapped;
+
+    return mapped.filter((g) => {
+        if (filters.categoryIds && filters.categoryIds.length > 0) {
+            const hasCategory = g.category && filters.categoryIds.includes(g.category.id);
+            if (!hasCategory) return false;
+        }
+        if (typeof filters.publisherId === 'number') {
+            if (!g.publisher || g.publisher.id !== filters.publisherId) return false;
+        }
+        return true;
+    });
+}
+
+/** All categories (id + name) ordered by name. */
+export async function getAllCategories(db: Database): Promise<{ id: number; name: string }[]> {
+    const rows = await db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.name));
+    return rows.map((r: any) => ({ id: r.id as number, name: r.name as string }));
+}
+
+/** All publishers (id + name) ordered by name. */
+export async function getAllPublishers(db: Database): Promise<{ id: number; name: string }[]> {
+    const rows = await db.select({ id: publishers.id, name: publishers.name }).from(publishers).orderBy(asc(publishers.name));
+    return rows.map((r: any) => ({ id: r.id as number, name: r.name as string }));
 }
 
 /** All game ids ordered by title. */

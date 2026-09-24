@@ -4,11 +4,14 @@ import GameCard from '../components/GameCard.astro';
 import PageHero from '../components/PageHero.astro';
 import EmptyState from '../components/EmptyState.astro';
 import { getDatabase } from '../lib/db';
-import { getAllGames } from '../lib/games';
+import { getAllGames, getAllCategories, getAllPublishers } from '../lib/games';
 
 export const prerender = true;
 
-const games = await getAllGames(getDatabase());
+const db = getDatabase();
+const games = await getAllGames(db);
+const categories = await getAllCategories(db);
+const publishers = await getAllPublishers(db);
 ---
 
 <Layout title="Tailspin Toys - Crowdfunding your new favorite game!">
@@ -21,6 +24,23 @@ const games = await getAllGames(getDatabase());
     <div>
       <h2 class="text-2xl font-medium mb-6 text-slate-100">Featured Games</h2>
 
+      <form class="mb-6 flex gap-4 items-center" aria-label="Filters">
+        <label class="text-slate-200" for="category-select">Categories</label>
+        <select id="category-select" multiple class="bg-slate-800 text-slate-100 rounded p-2" data-testid="filter-categories" aria-label="Filter by categories">
+          {categories.map((c) => (
+            <option value={c.id} data-testid={`filter-category-${c.id}`}>{c.name}</option>
+          ))}
+        </select>
+
+        <label class="text-slate-200" for="publisher-select">Publisher</label>
+        <select id="publisher-select" class="bg-slate-800 text-slate-100 rounded p-2" data-testid="filter-publisher" aria-label="Filter by publisher">
+          <option value="">All publishers</option>
+          {publishers.map((p) => (
+            <option value={p.id} data-testid={`filter-publisher-${p.id}`}>{p.name}</option>
+          ))}
+        </select>
+      </form>
+
       {games.length === 0 ? (
         <EmptyState text="No games available at the moment." />
       ) : (
@@ -30,4 +50,59 @@ const games = await getAllGames(getDatabase());
       )}
     </div>
   </div>
+
+  <script>
+    // Client-side filtering: apply immediately when selections change, update URL
+    const categorySelect = document.getElementById('category-select');
+    const publisherSelect = document.getElementById('publisher-select');
+
+    function getSelectedCategoryIds() {
+      return Array.from(categorySelect.selectedOptions).map((o) => o.value);
+    }
+
+    function applyFilters() {
+      const catIds = getSelectedCategoryIds();
+      const pub = publisherSelect.value;
+
+      // update URL params
+      const params = new URLSearchParams(window.location.search);
+      params.delete('categories');
+      for (const id of catIds) params.append('categories', id);
+      if (pub) params.set('publisher', pub); else params.delete('publisher');
+      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+      history.replaceState(null, '', newUrl);
+
+      // filter cards
+      const cards = document.querySelectorAll('[data-testid="game-card"]');
+      cards.forEach((card) => {
+        const cat = card.getAttribute('data-category-id');
+        const publisher = card.getAttribute('data-publisher-id');
+
+        let visible = true;
+        if (catIds.length > 0) {
+          visible = cat && catIds.includes(cat);
+        }
+        if (visible && pub) {
+          visible = publisher === pub;
+        }
+
+        (card).style.display = visible ? '' : 'none';
+      });
+    }
+
+    categorySelect.addEventListener('change', applyFilters);
+    publisherSelect.addEventListener('change', applyFilters);
+
+    // Initialize from URL params
+    (function initFromUrl(){
+      const params = new URLSearchParams(window.location.search);
+      const cats = params.getAll('categories');
+      const pub = params.get('publisher') || '';
+      if (cats.length) {
+        Array.from(categorySelect.options).forEach((opt) => { opt.selected = cats.includes(opt.value); });
+      }
+      if (pub) publisherSelect.value = pub;
+      applyFilters();
+    })();
+  </script>
 </Layout>
