@@ -119,4 +119,26 @@ There is no Svelte/React layer. When a page genuinely needs client behaviour, ad
 - Keep data fetching in frontmatter (build time); avoid client-side fetching
 - Minimize client-side JavaScript — the default is zero JS shipped
 - Import and use global CSS styles from layouts
-- Always include a `data-testid` on interactive elements (see `ui.instructions.md`)
+- Always include a `data-testid` on interactive elements (see `ui.instructions.md`).
+
+## Component Props documentation
+
+- Each reusable `.astro` component must declare a `Props` interface in frontmatter and include a short TSDoc comment that documents the public API, optional props with defaults, and expected shapes.
+- Example:
+
+```astro
+---
+/**
+ * Props for the GameCard component.
+ *
+ * @prop game - The game to render (required)
+ * @prop compact - When true, render a compact variant (optional, default: false)
+ */
+interface Props {
+  game: Game;
+  compact?: boolean;
+}
+---
+```
+
+Refer to `.github/instructions/comments.instructions.md` for the project's comment philosophy and TSDoc expectations. Update component comments when changing prop names or behavior so comments never become stale.

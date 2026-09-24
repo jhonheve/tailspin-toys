@@ -70,3 +70,29 @@ Node.js 22.13 or later is required because the data layer uses the built-in `nod
 ## Type checking
 
 The data layer (`db/**/*.ts`, `src/lib/*.ts`) is type-checked by `npm run typecheck`, which runs the native **TypeScript 7** compiler (`tsgo`, from `@typescript/native-preview`) against `tsconfig.tsgo.json`. Keep helpers exported with explicit parameter and return types so `tsgo` can verify them. Linting is unaffected — ESLint + `typescript-eslint` still run on the classic `typescript` package.
+
+## TSDoc / JSDoc expectations for data helpers
+
+- Every exported function, constant, or class in `db/` and `src/lib/` must have a TSDoc/JSDoc comment. The comment should include:
+  - A one-line summary describing purpose
+  - Parameter descriptions (explicitly document the injectable `db` argument when present)
+  - The return type and any special-case return values (e.g. `null` when not found)
+  - Any side-effects (for example: seeding, migrations, cache writes)
+
+- Example:
+
+```ts
+/**
+ * Fetch a game by id along with its category and publisher.
+ *
+ * @param db - Drizzle Database instance (injectable for tests)
+ * @param id - Numeric game id to fetch
+ * @returns The Game with relations or `null` when not found
+ */
+export async function getGameById(db: Database, id: number): Promise<Game | null> { ... }
+```
+
+- Prefer precise types for parameters and returns (avoid `any`). If a helper returns a mapped shape, document the shape in the return description or reference a type from `src/types/`.
+
+- See `.github/instructions/comments.instructions.md` for the project's comment philosophy and examples.
+
