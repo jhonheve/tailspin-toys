@@ -84,3 +84,8 @@ describe('getAllGames', () => {
 - Don't mock the database — an in-memory Node SQLite instance is fast and exercises real SQL/joins.
 - Keep fixtures minimal but representative of relationships (game → publisher, game → category).
 - If a schema change breaks tests, regenerate migrations with `npm run db:generate` and update fixtures.
+
+## Documentation expectations relevant to tests
+
+- Tests should exercise the public helpers that are documented via TSDoc/JSDoc in `db/` and `src/lib/`. When reviewing tests, ensure the helper's TSDoc describes parameters and return values clearly so tests can be written against the documented contract.
+- If a helper's behavior changes, update its TSDoc and tests together to keep the contract and tests in sync. See `.github/instructions/comments.instructions.md` for the comment philosophy and examples.
